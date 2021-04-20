@@ -1,46 +1,28 @@
-const int DELAY_MS = 1000;       // delay between color changes in ms
-const int RGB_RED_LED_PIN = 6;   // indicated by orange wire
-const int RGB_GREEN_LED_PIN = 5; // indicated by green wire
-const int RGB_BLUE_LED_PIN = 3;  // indicated by blue wire
+const int LED1_OUTPUT_PIN = 3; // Anode faces Pin 3 (cathode connected to 0V)
+const int LED2_OUTPUT_PIN = 4; // Cathode faces Pin 4 (anode connected to 5V)
+const int DELAY_MS = 1000; // delay for 1 sec between blinks
 
-void setup()
-{
-  // Set the red, green, and blue RGB LED pins to output
-  pinMode(RGB_RED_LED_PIN, OUTPUT);
-  pinMode(RGB_BLUE_LED_PIN, OUTPUT);
-  pinMode(RGB_GREEN_LED_PIN, OUTPUT);
+// The setup function runs once when you press reset or power the board
+void setup() {
+  // Set our LED pins as output
+  pinMode(LED1_OUTPUT_PIN, OUTPUT);
+  pinMode(LED2_OUTPUT_PIN, OUTPUT);
+
+  // initialize serial communications (for debugging only):
+  Serial.begin(9600);
 }
 
-// Function expects either HIGH or LOW for each parameter
-void setRgbLedColor(int red, int green, int blue){
-  digitalWrite(RGB_RED_LED_PIN, red);
-  digitalWrite(RGB_GREEN_LED_PIN, green);
-  digitalWrite(RGB_BLUE_LED_PIN, blue);
-}
-
-void loop()
-{
-  // red
-  setRgbLedColor(HIGH, LOW, LOW);
-  delay(DELAY_MS);
+// The loop function runs over and over again forever
+void loop() {
+  // Below, you're going to see that driving Pin 3 HIGH will turn on LED1
+  // but driving Pin 4 HIGH will actually turn *off* LED2
+  digitalWrite(LED1_OUTPUT_PIN, HIGH);  // turns ON LED1
+  digitalWrite(LED2_OUTPUT_PIN, HIGH);  // turns OFF LED2
+  Serial.println("Writing out HIGH; LED1 should be ON, LED2 OFF");
+  delay(DELAY_MS);                      // delay is in milliseconds; so wait one second
   
-  // green
-  setRgbLedColor(LOW, HIGH, LOW);
-  delay(DELAY_MS);
-  
-  // blue
-  setRgbLedColor(LOW, LOW, HIGH);
-  delay(DELAY_MS);
-  
-  // purple
-  setRgbLedColor(HIGH, LOW, HIGH);
-  delay(DELAY_MS);
-  
-  // turqoise
-  setRgbLedColor(LOW, HIGH, HIGH);
-  delay(DELAY_MS);
-  
-  // white
-  setRgbLedColor(HIGH, HIGH, HIGH);
-  delay(DELAY_MS);
+  digitalWrite(LED1_OUTPUT_PIN, LOW);   // turns OFF LED1 (Pin 3 is now 0V and other leg of LED is 0V)
+  digitalWrite(LED2_OUTPUT_PIN, LOW);   // turns ON LED2 (Pin 4 is now 0V and other leg of LED is 5V)
+  Serial.println("Writing out LOW; LED1 should be OFF, LED2 ON");
+  delay(DELAY_MS);                      // wait for a second
 }
