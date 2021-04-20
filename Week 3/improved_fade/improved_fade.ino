@@ -1,23 +1,38 @@
-const int LED1_OUTPUT_PIN = 3; // Anode faces Pin 3 (cathode connected to 0V)
-const int LED2_OUTPUT_PIN = 4; // Cathode faces Pin 4 (anode connected to 5V)
-const int DELAY_MS = 1000; // delay for 1 sec between blinks
+const int LED_OUTPUT_PIN = 3;
+const int MAX_ANALOG_OUT = 255; // the max analog output on the Uno is 255
+const int DELAY_MS = 5;
+
+int _fadeAmount = 5;      // the amount to fade the LED by on each step
+int _curBrightness = 0;   // how bright the LED is
+unsigned long long prevTime = 0; // time in ms previous loop cycle
 
 // The setup function runs once when you press reset or power the board
 void setup() {
-  // Set our LED pins as output
-  pinMode(LED1_OUTPUT_PIN, OUTPUT);
-  pinMode(LED2_OUTPUT_PIN, OUTPUT);
+  // set the LED pin to as an output
+  pinMode(LED_OUTPUT_PIN, OUTPUT);
+  Serial.begin(9600); // for using Serial.println
 }
 
 // The loop function runs over and over again forever
 void loop() {
-  // Below, you're going to see that driving Pin 3 HIGH will turn on LED1
-  // but driving Pin 4 HIGH will actually turn *off* LED2
-  digitalWrite(LED1_OUTPUT_PIN, HIGH);  // turns ON LED1
-  digitalWrite(LED2_OUTPUT_PIN, HIGH);  // turns OFF LED2
-  delay(DELAY_MS);                      // delay is in milliseconds; so wait one second
-  
-  digitalWrite(LED1_OUTPUT_PIN, LOW);   // turns OFF LED1 (Pin 3 is now 0V and other leg of LED is 0V)
-  digitalWrite(LED2_OUTPUT_PIN, LOW);   // turns ON LED2 (Pin 4 is now 0V and other leg of LED is 5V)
-  delay(DELAY_MS);                      // wait for a second
+  // get current time
+  unsigned long long currTime = millis();
+
+  // if DELAY_MS has not passed, do not adjust brightness
+  if (currTime - prevTime >= DELAY_MS) {
+
+    // save the current time for next cycle
+    prevTime = currTime;
+
+    // set the brightness of the LED pin
+    analogWrite(LED_OUTPUT_PIN, _curBrightness);
+
+    // change the brightness for next time through the loop
+    _curBrightness = _curBrightness + _fadeAmount;
+
+    // reverse the direction of the fading at the end of each fade direction
+    if (_curBrightness <= 0 || _curBrightness >= MAX_ANALOG_OUT) {
+      _fadeAmount = -_fadeAmount; // reverses fade direction
+    }
+  }
 }
