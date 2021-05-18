@@ -4,7 +4,7 @@
 class Note
 {
 	public:
-		Note(short lane, short startTime, short pitch);
+		Note(short lane, short startTime, double pitch);
 		void update();
 		void click();
 		bool valid();
@@ -15,7 +15,7 @@ class Note
         short currH_;
 		short startTime_;
 		short lane_;
-		short pitch_;
+		double pitch_;
 	private:
 		bool clicked_;
 };

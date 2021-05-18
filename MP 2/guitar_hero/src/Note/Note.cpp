@@ -1,7 +1,7 @@
 #include "Note.h"
 #include <Arduino.h>
 
-Note::Note(short lane, short startTime, short pitch)
+Note::Note(short lane, short startTime, double pitch)
 {   
     clicked_ = false;
 	lane_ = lane;
