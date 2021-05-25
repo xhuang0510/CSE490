@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Web Serial Demo</title>
+</head>
+
+<body>
+  <script src="https://cdn.jsdelivr.net/gh/makeabilitylab/p5js/_libraries/serial.js"></script>
+  <h1>Web Serial Demo</h1>
+  This demo uses a number input to send a number between 0-255 to your connected serial device.
+
+  <p></p>
+  <button id="connect-button" onclick="onConnectButtonClick()">Connect via Serial Port</button>
+  <div id="interactive-controls" style="display:none">
+    <h1>Serial value: <span id="slider-value">0</span></h1>
+    <!-- <input id="slider" type="range" min="0" max="255" 
+        value="128" onchange="onSliderValueChanged(this, event)" /> -->
+    <input type="number" id="quantity" name="quantity" min="0" max="255" >
+    <input type="submit" value="Submit" onclick="onSliderValueChanged(event)">
+  </div>
+  <script>
+    // Get current slider value and set it to the slider text output
+    let sliderVal = document.getElementById('quantity').value;
+    document.getElementById('slider-value').textContent = sliderVal;
+
+    // Setup Web Serial using serial.js
+    const serial = new Serial();
+    serial.on(SerialEvents.CONNECTION_OPENED, onSerialConnectionOpened);
+    serial.on(SerialEvents.CONNECTION_CLOSED, onSerialConnectionClosed);
+    serial.on(SerialEvents.DATA_RECEIVED, onSerialDataReceived);
+    serial.on(SerialEvents.ERROR_OCCURRED, onSerialErrorOccurred);
+
+    function onSerialErrorOccurred(eventSender, error) {
+        console.log("onSerialErrorOccurred", error);
+    }
+
+    function onSerialConnectionOpened(eventSender) {
+        console.log("onSerialConnectionOpened", eventSender);
+        document.getElementById("connect-button").style.display = "none";
+        document.getElementById("interactive-controls").style.display = "block";
+    }
+
+    function onSerialConnectionClosed(eventSender) {
+        console.log("onSerialConnectionClosed", eventSender);
+    }
+
+    function onSerialDataReceived(eventSender, newData) {
+        console.log("onSerialDataReceived", newData);
+    }
+
+    async function onConnectButtonClick() {
+        console.log("Connect button clicked!");
+
+        if (navigator.serial) {
+            if (!serial.isOpen()) {
+            await serial.connectAndOpen();
+            } else {
+            console.log("The serial connection appears already open");
+            }
+
+        } else {
+            alert('The Web Serial API does not appear supported on this web browser.');
+        }
+    }
+
+    async function onSliderValueChanged(event) {
+        let val = document.getElementById('quantity').value;
+        if (val < 0 || val > 255) {
+            console.log("Cannot write value: ", val);
+            document.getElementById('slider-value').textContent = "Invalid Input";
+        } else {
+            console.log("Writing to serial: ", val);
+            serial.writeLine(val);
+
+            // Update the slider value text
+            document.getElementById('slider-value').textContent = val;
+        }
+    }
+  </script>
+</body>
+</html>

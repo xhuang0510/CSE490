@@ -521,7 +521,6 @@ void displayNotes(Note* level, int button1State, int button2State, int button3St
           scoreNum += 250;
           passedNotes++;
           tone(BUZZER_PIN, level[i].pitch_);
-
           toneTimer = timer;
         } else if (level[i].currY_ > 48 && level[i].currY_ < 63) { // GOOD
           level[i].click();
