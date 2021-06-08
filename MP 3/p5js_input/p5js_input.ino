@@ -34,6 +34,17 @@ int mapIndex = 4;
 
 int _lastAnalogVal = -1;
 
+// Debouncing purposes
+bool upIsPressed = false;
+bool downIsPressed = false;
+
+// Track what is unlocked in the inventory
+bool bowUnlock = true;
+bool wandUnlock = true;
+bool potionUnlock = true;
+bool rangUnlock = true;
+bool fourthHP = true;
+
 void setup() {
   Serial.begin(115200); // set baud rate to 115200
 
@@ -64,18 +75,59 @@ void loop() {
   int button2State = digitalRead(BUTTON_2_PIN);
   int button3State = digitalRead(BUTTON_3_PIN);
 
-  if (!button1State && inventoryIndex > 0) {
-    inventoryIndex--;
+  // Button debounce
+  if (button1State) {
+    upIsPressed = true;
   }
-  if (!button2State && inventoryIndex < 4) {
+  if (button2State) {
+    downIsPressed = true;
+  }
+
+  // Track button states when switching inventory
+  if (!button1State && inventoryIndex > 0 && upIsPressed) {
+    inventoryIndex--;
+    upIsPressed = false;
+  }
+  if (!button2State && inventoryIndex < 4 && downIsPressed) {
     inventoryIndex++;
+    downIsPressed = false;
   }
   if (!button3State) {
     // If the analog value has changed, send a new one over serial
-    if (inventoryIndex != selectedIndex){
-      Serial.println(inventoryIndex);
+    if (inventoryIndex == 0) {
+      if (inventoryIndex != selectedIndex){
+          Serial.println(inventoryIndex);
+        }
+        selectedIndex = inventoryIndex;
+    } else if (inventoryIndex == 1) {
+      if (bowUnlock) {
+        if (inventoryIndex != selectedIndex){
+          Serial.println(inventoryIndex);
+        }
+        selectedIndex = inventoryIndex;
+      }
+    } else if (inventoryIndex == 2) {
+      if (wandUnlock) {
+        if (inventoryIndex != selectedIndex){
+          Serial.println(inventoryIndex);
+        }
+        selectedIndex = inventoryIndex;
+      }
+    } else if (inventoryIndex == 3) {
+      if (potionUnlock) {
+        if (inventoryIndex != selectedIndex){
+          Serial.println(inventoryIndex);
+        }
+        selectedIndex = inventoryIndex;
+      }
+    } else if (inventoryIndex == 4) {
+      if (rangUnlock) {
+        if (inventoryIndex != selectedIndex){
+          Serial.println(inventoryIndex);
+        }
+        selectedIndex = inventoryIndex;
+      }
     }
-    selectedIndex = inventoryIndex;
   }
   
   // Clear the display
@@ -98,21 +150,37 @@ void loop() {
   _display.fillCircle(16, 5, 4, SSD1306_WHITE);
   _display.fillCircle(28, 5, 4, SSD1306_WHITE);
   // Extra heart
-//  _display.fillCircle(40, 5, 4, SSD1306_WHITE);
+  if (fourthHP) {
+    _display.fillCircle(40, 5, 4, SSD1306_WHITE);
+  }
 
   // Draw inventory
   _display.setCursor(0, 15);
   _display.print("SWORD");
   _display.setCursor(0, 25);
-  _display.print("BOW");
+  if (bowUnlock) {
+    _display.print("BOW");
+  } else {
+    _display.print("???");
+  }
   _display.setCursor(0, 35);
-  _display.print("???");
-//  _display.print("MAGIC");
+  if (wandUnlock) {
+    _display.print("MAGIC");
+  } else {
+    _display.print("???");
+  }
   _display.setCursor(0, 45);
-  _display.print("POTION");
+  if (potionUnlock) {
+    _display.print("POTION");
+  } else {
+    _display.print("???");
+  }
   _display.setCursor(0, 55);
-  _display.print("???");
-//  _display.print("BOMB");
+  if (rangUnlock) {
+    _display.print("RANG");
+  } else {
+    _display.print("???");
+  }
 
   // Draw selector
   _display.drawTriangle(45, 18 + 10 * inventoryIndex, 50, 15 + 10 * inventoryIndex, 50, 21 + 10 * inventoryIndex, SSD1306_WHITE);
