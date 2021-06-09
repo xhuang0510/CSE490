@@ -32,18 +32,14 @@ int selectedIndex = 0;
 // Track what area of map player is
 int mapIndex = 4;
 
+// Current health
+int health = 8;
+
 int _lastAnalogVal = -1;
 
 // Debouncing purposes
 bool upIsPressed = false;
 bool downIsPressed = false;
-
-// Track what is unlocked in the inventory
-bool bowUnlock = true;
-bool wandUnlock = true;
-bool potionUnlock = true;
-bool rangUnlock = true;
-bool fourthHP = true;
 
 void setup() {
   Serial.begin(115200); // set baud rate to 115200
@@ -67,7 +63,8 @@ void loop() {
     String rcvdSerialData = Serial.readStringUntil('\n'); 
 
     // Convert string data into an integer
-    mapIndex = rcvdSerialData.toInt();
+    mapIndex = rcvdSerialData.toInt() % 10;
+    health = rcvdSerialData.toInt() / 10;
   }
 
   // Receive button inputs
@@ -94,40 +91,10 @@ void loop() {
   }
   if (!button3State) {
     // If the analog value has changed, send a new one over serial
-    if (inventoryIndex == 0) {
-      if (inventoryIndex != selectedIndex){
-          Serial.println(inventoryIndex);
-        }
-        selectedIndex = inventoryIndex;
-    } else if (inventoryIndex == 1) {
-      if (bowUnlock) {
-        if (inventoryIndex != selectedIndex){
-          Serial.println(inventoryIndex);
-        }
-        selectedIndex = inventoryIndex;
-      }
-    } else if (inventoryIndex == 2) {
-      if (wandUnlock) {
-        if (inventoryIndex != selectedIndex){
-          Serial.println(inventoryIndex);
-        }
-        selectedIndex = inventoryIndex;
-      }
-    } else if (inventoryIndex == 3) {
-      if (potionUnlock) {
-        if (inventoryIndex != selectedIndex){
-          Serial.println(inventoryIndex);
-        }
-        selectedIndex = inventoryIndex;
-      }
-    } else if (inventoryIndex == 4) {
-      if (rangUnlock) {
-        if (inventoryIndex != selectedIndex){
-          Serial.println(inventoryIndex);
-        }
-        selectedIndex = inventoryIndex;
-      }
+    if (inventoryIndex != selectedIndex){
+        Serial.println(inventoryIndex);
     }
+    selectedIndex = inventoryIndex;
   }
   
   // Clear the display
@@ -146,42 +113,48 @@ void loop() {
   _display.drawLine(55, 0, 55, 63, SSD1306_WHITE);
 
   // Draw current health
-  _display.fillCircle(4, 5, 4, SSD1306_WHITE);
-  _display.fillCircle(16, 5, 4, SSD1306_WHITE);
-  _display.fillCircle(28, 5, 4, SSD1306_WHITE);
-  // Extra heart
-  if (fourthHP) {
+  if (health == 8) {
+    _display.fillCircle(4, 5, 4, SSD1306_WHITE);
+    _display.fillCircle(16, 5, 4, SSD1306_WHITE);
+    _display.fillCircle(28, 5, 4, SSD1306_WHITE);
     _display.fillCircle(40, 5, 4, SSD1306_WHITE);
-  }
+  } else if (health == 7) {
+    _display.fillCircle(4, 5, 4, SSD1306_WHITE);
+    _display.fillCircle(16, 5, 4, SSD1306_WHITE);
+    _display.fillCircle(28, 5, 4, SSD1306_WHITE);
+    _display.drawCircle(40, 5, 4, SSD1306_WHITE);
+  } else if (health == 6) {
+    _display.fillCircle(4, 5, 4, SSD1306_WHITE);
+    _display.fillCircle(16, 5, 4, SSD1306_WHITE);
+    _display.fillCircle(28, 5, 4, SSD1306_WHITE);
+  } else if (health == 5) {
+    _display.fillCircle(4, 5, 4, SSD1306_WHITE);
+    _display.fillCircle(16, 5, 4, SSD1306_WHITE);
+    _display.drawCircle(28, 5, 4, SSD1306_WHITE);
+  } else if (health == 4) {
+    _display.fillCircle(4, 5, 4, SSD1306_WHITE);
+    _display.fillCircle(16, 5, 4, SSD1306_WHITE);
+  } else if (health == 3) {
+    _display.fillCircle(4, 5, 4, SSD1306_WHITE);
+    _display.drawCircle(16, 5, 4, SSD1306_WHITE);
+  } else if (health == 2) {
+    _display.fillCircle(4, 5, 4, SSD1306_WHITE);
+  } else if (health == 1) {
+    _display.drawCircle(4, 5, 4, SSD1306_WHITE);
+  } 
 
   // Draw inventory
   _display.setCursor(0, 15);
   _display.print("SWORD");
   _display.setCursor(0, 25);
-  if (bowUnlock) {
-    _display.print("BOW");
-  } else {
-    _display.print("???");
-  }
+  _display.print("BOW");
   _display.setCursor(0, 35);
-  if (wandUnlock) {
-    _display.print("MAGIC");
-  } else {
-    _display.print("???");
-  }
+  _display.print("MAGIC");
   _display.setCursor(0, 45);
-  if (potionUnlock) {
-    _display.print("POTION");
-  } else {
-    _display.print("???");
-  }
+  _display.print("POTION");
   _display.setCursor(0, 55);
-  if (rangUnlock) {
-    _display.print("RANG");
-  } else {
-    _display.print("???");
-  }
-
+  _display.print("RANG");
+  
   // Draw selector
   _display.drawTriangle(45, 18 + 10 * inventoryIndex, 50, 15 + 10 * inventoryIndex, 50, 21 + 10 * inventoryIndex, SSD1306_WHITE);
 

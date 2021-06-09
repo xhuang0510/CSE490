@@ -5,80 +5,97 @@ let serialOptions = { baudRate: 115200  };
 // Canvas dimensions
 const WIDTH = 1000;
 const HEIGHT = 700;
+const ENTITY_SIZE = 60;
+const NUM_ENEMIES = 60;
 
 // Sword images
-let swordRight;
-let swordLeft;
-let swordUp;
-let swordDown;
+let swordRight, swordLeft, swordUp, swordDown;
 
 // Bow images
-let bowRight;
-let bowLeft;
-let bowUp;
-let bowDown;
+let bowRight, bowLeft, bowUp, bowDown;
 
 // Wand images
-let wandRight;
-let wandLeft;
-let wandUp;
-let wandDown;
+let wandRight, wandLeft, wandUp, wandDown;
 
 // Heal effect
 let healEffect;
 
 // Boomerang images
-let rangRight;
-let rangLeft;
-let rangUp;
-let rangDown;
+let rangRight, rangLeft, rangUp, rangDown;
 
 // Arrow images
-let arrowRight;
-let arrowLeft;
-let arrowUp;
-let arrowDown;
+let arrowRight, arrowLeft, arrowUp, arrowDown;
 
 // Fire spell image
 let fireImg;
 
+// Background image
+let grassImg
+
+// Character images
+let charRight, charLeft, charUp, charDown;
+
+// Enemy sprites
+let wanderImg, chaseImg, knightImg, knightChaserImg, guardianImg, casterImg,
+    skeletonImg, bossImg;
+
+// Load game obstacles
+let pedestalImg;
+
 // Preload images
 function preload() {
   // Load sword images
-  swordRight = loadImage('assets/sword_right.png');
-  swordLeft = loadImage('assets/sword_left.png');
-  swordUp = loadImage('assets/sword_up.png');
-  swordDown = loadImage('assets/sword_down.png');
+  swordRight = loadImage('assets/items/sword_right.png');
+  swordLeft = loadImage('assets/items/sword_left.png');
+  swordUp = loadImage('assets/items/sword_up.png');
+  swordDown = loadImage('assets/items/sword_down.png');
   // Load bow images
-  bowRight = loadImage('assets/bow_right.png');
-  bowLeft = loadImage('assets/bow_left.png');
-  bowUp = loadImage('assets/bow_up.png');
-  bowDown = loadImage('assets/bow_down.png');
+  bowRight = loadImage('assets/items/bow_right.png');
+  bowLeft = loadImage('assets/items/bow_left.png');
+  bowUp = loadImage('assets/items/bow_up.png');
+  bowDown = loadImage('assets/items/bow_down.png');
   // Load wand images
-  wandRight = loadImage('assets/wand_right.png');
-  wandLeft = loadImage('assets/wand_left.png');
-  wandUp = loadImage('assets/wand_up.png');
-  wandDown = loadImage('assets/wand_down.png');
+  wandRight = loadImage('assets/items/wand_right.png');
+  wandLeft = loadImage('assets/items/wand_left.png');
+  wandUp = loadImage('assets/items/wand_up.png');
+  wandDown = loadImage('assets/items/wand_down.png');
   // Load heal animation
-  healEffect = loadImage('assets/heal.gif');
+  healEffect = loadImage('assets/animations/heal.gif');
   // Load boomerang images
-  rangRight = loadImage('assets/rang_right.png');
-  rangLeft = loadImage('assets/rang_left.png');
-  rangUp = loadImage('assets/rang_up.png');
-  rangDown = loadImage('assets/rang_down.png');
+  rangRight = loadImage('assets/items/rang_right.png');
+  rangLeft = loadImage('assets/items/rang_left.png');
+  rangUp = loadImage('assets/items/rang_up.png');
+  rangDown = loadImage('assets/items/rang_down.png');
   // Load arrow images
-  arrowRight = loadImage('assets/arrow_right.png');
-  arrowLeft = loadImage('assets/arrow_left.png');
-  arrowUp = loadImage('assets/arrow_up.png');
-  arrowDown = loadImage('assets/arrow_down.png');
+  arrowRight = loadImage('assets/projectiles/arrow_right.png');
+  arrowLeft = loadImage('assets/projectiles/arrow_left.png');
+  arrowUp = loadImage('assets/projectiles/arrow_up.png');
+  arrowDown = loadImage('assets/projectiles/arrow_down.png');
   // Load fire spell
-  fireImg = loadImage('assets/fire.png');
+  fireImg = loadImage('assets/projectiles/fire.png');
+  // Load grass
+  grassImg = loadImage('assets/map/grass.png');
+  // Load char images
+  charRight = loadImage('assets/entities/char_right.png');
+  charLeft = loadImage('assets//entities/char_left.png');
+  charUp = loadImage('assets/entities/char_up.png');
+  charDown = loadImage('assets/entities/char_down.png');
+  // Load enemy images
+  wanderImg = loadImage('assets/entities/wanderer_sprite.png');
+  chaseImg = loadImage('assets/entities/chaser_sprite.png'); 
+  knightImg = loadImage('assets/entities/knight_sprite.png');
+  knightChaserImg = loadImage('assets/entities/chaser_knight_sprite.png');
+  guardianImg = loadImage('assets/entities/guardian_sprite.png');
+  skeletonImg = loadImage('assets/entities/skeleton_sprite.png');
+  bossImg = loadImage('assets/entities/boss_sprite.png');
+  // Load game obstacles
+  pedestalImg = loadImage('assets/map/pedestal.png');
 }
 
 function setup() {
   createCanvas(WIDTH, HEIGHT);
 
-  // Resize sowrd images
+  // Resize sword images
   swordRight.resize(120, 75);
   swordLeft.resize(120, 75);
   swordUp.resize(75, 120);
@@ -114,6 +131,26 @@ function setup() {
   // Resize fire image
   fireImg.resize(75, 75);
 
+  // Resize character images
+  charRight.resize(ENTITY_SIZE, ENTITY_SIZE);
+  charLeft.resize(ENTITY_SIZE, ENTITY_SIZE);
+  charUp.resize(ENTITY_SIZE, ENTITY_SIZE);
+  charDown.resize(ENTITY_SIZE, ENTITY_SIZE);
+
+  // Resize enemies
+  wanderImg.resize(ENTITY_SIZE, ENTITY_SIZE);
+  chaseImg.resize(ENTITY_SIZE, ENTITY_SIZE);
+  knightImg.resize(ENTITY_SIZE, ENTITY_SIZE);
+  knightChaserImg.resize(ENTITY_SIZE, ENTITY_SIZE);
+  guardianImg.resize(ENTITY_SIZE, ENTITY_SIZE);
+  skeletonImg.resize(ENTITY_SIZE, ENTITY_SIZE);
+  bossImg.resize(ENTITY_SIZE, ENTITY_SIZE);
+
+  pedestalImg.resize(150, 300);
+
+  // Set up game
+  setUpGame();
+
   // Setup Web Serial using serial.js
   serial = new Serial();
   serial.on(SerialEvents.CONNECTION_OPENED, onSerialConnectionOpened);
@@ -132,9 +169,12 @@ const CHAR_DIAM = 50;
 // Track the game state
 let gameState = 0;
 
+// Track whether game is paused
+let paused = false;
+
 // Track player health
-let maxHealth = 3;
-let health = 3;
+let maxHealth = 4;
+let health = 4;
 
 // Track player position
 let xPos = WIDTH / 2;
@@ -148,11 +188,14 @@ let face = 2;
 let weapon = 0;
 let weaponActive = false;
 
-// Track player map position
+// Track when the game is over and when the boss is available
+let killCount = 0;
+
+// Track player map position and load enemies
 let map = [
-    [0, 0, 0],
-    [0, 1, 0],
-    [0, 0, 0]
+    [], [], [],
+    [], [], [],
+    [], [], []
 ];
 let mapX = 1;
 let mapY = 1;
@@ -166,9 +209,6 @@ let down = false;
 // Used to track user projectiles
 let userProj = [];
 
-// Used to track enemy projectiles
-let enemyProj = [];
-
 // Track active states of items
 let spellState = true;
 let rangState = true;
@@ -176,11 +216,173 @@ let potionState = true;
 let bowState = 0;
 let healState = 0;
 
+// Track invincibility frames
+let invulPlayer = 0;
+let playerHitDirec = 1;
+
+// Enemies change direction
+let directionTime = 0;
+
+// Sets up the game with area designs and enemy placements
+function setUpGame() {
+    // Secondary array index 0 contains area obstacles
+    // Secondary array index 1 contains area enemies
+    // Fill area (0, 0)
+    map[0].push({ name: "guardian", currX: 200, currY: 100, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "guardian", currX: 450, currY: 100, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "guardian", currX: 700, currY: 100, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "guardian", currX: 200, currY: 300, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "guardian", currX: 450, currY: 300, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "guardian", currX: 700, currY: 300, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "guardian", currX: 200, currY: 500, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "guardian", currX: 450, currY: 500, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "guardian", currX: 700, currY: 500, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "knightChaser", currX: 200, currY: 100, health: 20, speed: 2, atk: 3,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "knight", currX: 450, currY: 100, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "knightChaser", currX: 700, currY: 100, health: 20, speed: 2, atk: 3,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "knightChaser", currX: 200, currY: 600, health: 20, speed: 2, atk: 3,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "knight", currX: 450, currY: 600, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[0].push({ name: "knightChaser", currX: 700, currY: 600, health: 20, speed: 2, atk: 3,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    // Fill area (1, 0)
+    map[1].push({ name: "skeleton", currX: 200, currY: 600, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[1].push({ name: "skeleton", currX: 600, currY: 600, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[1].push({ name: "skeleton", currX: 300, currY: 200, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[1].push({ name: "skeleton", currX: 600, currY: 200, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    // Fill area (2, 0)
+    map[2].push({ name: "skeleton", currX: 200, currY: 600, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[2].push({ name: "skeleton", currX: 600, currY: 600, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[2].push({ name: "skeleton", currX: 300, currY: 200, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[2].push({ name: "knightChaser", currX: 700, currY: 100, health: 20, speed: 2, atk: 3,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[2].push({ name: "knightChaser", currX: 200, currY: 600, health: 20, speed: 2, atk: 3,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[2].push({ name: "wander", currX: 500, currY: 500, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[2].push({ name: "wander", currX: 400, currY: 400, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[2].push({ name: "wander", currX: 300, currY: 300, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[2].push({ name: "wander", currX: 300, currY: 600, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    // Fill area (0, 1)
+    map[3].push({ name: "knight", currX: 200, currY: 100, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[3].push({ name: "knight", currX: 450, currY: 100, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[3].push({ name: "knight", currX: 700, currY: 100, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[3].push({ name: "knight", currX: 200, currY: 600, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[3].push({ name: "chaser", currX: 600, currY: 600, health: 5, speed: 2, atk: 1,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[3].push({ name: "chaser", currX: 400, currY: 700, health: 5, speed: 2, atk: 1,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[3].push({ name: "chaser", currX: 600, currY: 600, health: 5, speed: 2, atk: 1,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    // Fill area (1, 1)
+    map[4].push({ name: "wander", currX: 500, currY: 500, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[4].push({ name: "wander", currX: 400, currY: 400, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[4].push({ name: "wander", currX: 300, currY: 300, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[4].push({ name: "wander", currX: 300, currY: 600, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[4].push({ name: "chaser", currX: 600, currY: 600, health: 5, speed: 2, atk: 1,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[4].push({ name: "chaser", currX: 400, currY: 700, health: 5, speed: 2, atk: 1,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    // Fill area (2, 1)
+    map[5].push({ name: "guardian", currX: 200, currY: 300, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[5].push({ name: "guardian", currX: 450, currY: 300, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[5].push({ name: "guardian", currX: 700, currY: 300, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[5].push({ name: "wander", currX: 500, currY: 500, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[5].push({ name: "wander", currX: 400, currY: 400, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[5].push({ name: "wander", currX: 300, currY: 300, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[5].push({ name: "wander", currX: 300, currY: 600, health: 5, speed: 2, atk: 1,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[5].push({ name: "chaser", currX: 600, currY: 600, health: 5, speed: 2, atk: 1,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    map[5].push({ name: "chaser", currX: 400, currY: 700, health: 5, speed: 2, atk: 1,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
+    // Fill area (0, 2)
+    map[6].push({ name: "skeleton", currX: 200, currY: 600, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[6].push({ name: "skeleton", currX: 600, currY: 600, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[6].push({ name: "skeleton", currX: 300, currY: 200, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[6].push({ name: "skeleton", currX: 600, currY: 200, health: 0, speed: 3, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[6].push({ name: "knightChaser", currX: 200, currY: 600, health: 60, speed: 3, atk: 6,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    // Fill area (1, 2)
+    map[7].push({ name: "guardian", currX: 200, currY: 300, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[7].push({ name: "guardian", currX: 450, currY: 300, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[7].push({ name: "guardian", currX: 700, currY: 300, health: 20, speed: 0, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[7].push({ name: "knightChaser", currX: 200, currY: 600, health: 20, speed: 2, atk: 3,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[7].push({ name: "knight", currX: 450, currY: 600, health: 60, speed: 1, atk: 6,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[7].push({ name: "knightChaser", currX: 700, currY: 600, health: 20, speed: 2, atk: 3,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    // Fill area (2, 2)
+    map[8].push({ name: "knight", currX: 200, currY: 100, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[8].push({ name: "knight", currX: 450, currY: 100, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[8].push({ name: "knight", currX: 700, currY: 100, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[8].push({ name: "knight", currX: 200, currY: 300, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[8].push({ name: "knightChaser", currX: 450, currY: 300, health: 60, speed: 1, atk: 7,
+        aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[8].push({ name: "knight", currX: 700, currY: 300, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[8].push({ name: "knight", currX: 200, currY: 500, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[8].push({ name: "knight", currX: 450, currY: 500, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    map[8].push({ name: "knight", currX: 700, currY: 500, health: 20, speed: 2, atk: 3,
+        aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+}
+
 function draw() {
-  background(124, 175, 98);
+  background(grassImg);
   stroke(0);
-  fill(200); 
   textSize(64);
+  fill(250);
 
   // On menu screen
   if (gameState == 0) {
@@ -188,6 +390,7 @@ function draw() {
     text("Hero Simulator", (width / 4) + 16, height / 4);
 
     // Insert some artwork here
+    image(pedestalImg, (width / 3) + 75, (height / 4) + 16);
 
     // If user has not connected serial
     textSize(32);
@@ -197,10 +400,37 @@ function draw() {
         text("Play", (width / 2) - 45, height - 150);
     }
   } else if (gameState == 1) { // In game
-    // Display the gameplay
-    displayGame();
+    if (!serial.isOpen()) {
+        fill(250); 
+        textSize(32);
+        stopPlayer();
+        weaponActive = false;
+        paused = true;
+        text("Click to Connect to Serial!", (width / 4) + 45, height - 150);
+    }
+    textSize(64);
+    if (paused) {
+        text("PAUSED", (width / 3) + 20, height / 4);
+    } else {
+        fill(200); 
+        // Display the gameplay
+        displayGame();
+    }
+    // Win the game
+    if (killCount == NUM_ENEMIES) {
+        gameState++;
+    }
   } else { // Game over
-    text("Game Over", (width / 4) + 45, height - 150);
+    if (gameState == 2) {
+        restart();
+        setUpGame();
+        gameState++;
+    }
+    if (killCount < NUM_ENEMIES) {
+        text("Game Over", (width / 4) + 90, height - 150);
+    } else {
+        text("You Win!!", (width / 4) + 90, height - 150);
+    }
   }
 }
 
@@ -231,53 +461,283 @@ function mouseClicked() {
 document.addEventListener('keydown', function(e) {
     if(e.code == "Space") { // Space key
         // If on menu screen, start game
-        if (gameState == 0) {
+        if (gameState == 0 && serial.isOpen()) {
             gameState++;
         } else if (gameState == 1) { // In game
-            console.log("mapX: " + mapX);
-            console.log("mapY: " + mapY);
-            health--;
-            if (health == 0) {
-                gameState++;
-            }
+            paused = !paused;
+            stopPlayer();
+            weaponActive = false;
         } else { // On game over screen
             gameState = 0;
+            updateSerial();
         }
     } 
-    if (e.code == "KeyW") { // W key
-        up = true;
-        face = 0;
-    } else if (e.code == "KeyA") { // A key
-        left = true;
-        face = 1;
-    } else if (e.code == "KeyS") { // S key
-        down = true;
-        face = 2;
-    } else if (e.code == "KeyD") { // D key
-        right = true;
-        face = 3;
+    if (!paused) {
+        if (e.code == "KeyW") { // W key
+            up = true;
+            face = 0;
+        } else if (e.code == "KeyA") { // A key
+            left = true;
+            face = 1;
+        } else if (e.code == "KeyS") { // S key
+            down = true;
+            face = 2;
+        } else if (e.code == "KeyD") { // D key
+            right = true;
+            face = 3;
+        }
     }
 });
 
 // Take in key press events
 document.addEventListener('keyup', function(e) {
-    if(e.code == "Space") { // Space key
-        
-    } 
-    if (e.code == "KeyW") { // W key
-        up = false;
-    } else if (e.code == "KeyA") { // A key
-        left = false;
-    } else if (e.code == "KeyS") { // S key
-        down = false;
-    } else if (e.code == "KeyD") { // D key
-        right = false;
+    if (!paused) {
+        if (e.code == "KeyW") { // W key
+            up = false;
+        } else if (e.code == "KeyA") { // A key
+            left = false;
+        } else if (e.code == "KeyS") { // S key
+            down = false;
+        } else if (e.code == "KeyD") { // D key
+            right = false;
+        }
     }
 });
 
+// User clicks mouse
+document.body.addEventListener("mousedown", function(e) {
+    if (!paused) {
+        weaponActive = true;
+        if (weapon == 0) { // Sword
+            registerSwordSwing();
+        } else if (weapon == 2 && spellState) { // Wand
+            userProj.push({
+                name: "flame",
+                projX: xPos,
+                projY: yPos,
+                direc: face,
+                lifeTime: 300,
+                travelCount: 0,
+                valid: true,
+                size: 75
+            });
+            spellState = false;
+            fireImg.resize(75, 75);
+        } else if (weapon == 3 && healState == 0) { // Heal
+            healState = 1;
+            health += 2;
+            if (health > maxHealth) {
+                health = maxHealth;
+            }
+            updateSerial();
+        }
+    }
+});
+
+// User releases mouse click
+document.body.addEventListener("mouseup", function(e) {
+    if (!paused) {
+        weaponActive = false;
+        if (weapon == 1 && bowState == 0) { // Bow
+            userProj.push({
+                name: "arrow",
+                projX: xPos,
+                projY: yPos,
+                direc: face,
+                valid: true,
+                size: 75,
+                hit: false
+            });
+            bowState = 1;
+        } else if (weapon == 4 && rangState) { // Boomerang
+            userProj.push({
+                name: "rang",
+                projX: xPos,
+                projY: yPos,
+                direc: face,
+                travelCount: 0,
+                back: false,
+                valid: true,
+                size: 50,
+                hit: false
+            });
+            rangState = false;
+        }
+    }
+});
+
+// Display the gameplay
+function displayGame() {
+    // Check if still alive
+    if (health <= 0) {
+        gameState++;
+    }
+
+    // Display enemies
+    displayEnemies();
+
+    // Display active weapon
+    displayWeapon();
+
+    // Update character position
+    updatePos();
+    // Draw character
+    if (invulPlayer > 0) { // Invincibility frame flicker
+        if (invulPlayer < 5 || invulPlayer > 15) {
+            displayChar();
+        } 
+    } else {
+        displayChar();
+    }
+    
+    if (!paused) {
+        // Display all on-screen projectiles
+        displayProjectiles();
+        // Calculate projectile collisions
+        calculateCollisions();
+
+        // Heal effect
+        if (healState > 0) {
+            if (healState < 100) {
+                image(healEffect, xPos - 50, yPos - 50);
+            }
+            healState++;
+            // Cannot use heal again for about 30 seconds
+            if (healState == 3000) {
+                healState = 0;
+            }
+        }
+    }
+}
+
+// Detect collisions between entities and projectiles
+function calculateCollisions() {
+    mapIndex = convertXYToMapArrayIndex(mapX, mapY);
+    // See if enemy collided with player
+    if (invulPlayer == 0) { // Only calculate if player is not invincible
+        for (let i = 0; i < map[mapIndex].length; i++) {
+            if (checkUpperBoundingBox(i, mapIndex, xPos, yPos, ENTITY_SIZE)) {
+                health -= map[mapIndex][i].atk / 2.0;
+                updateSerial()
+                invulPlayer = 1;
+                playerHitDirec = 1;
+            } else if (checkLeftBoundingBox(i, mapIndex, xPos, yPos, ENTITY_SIZE)) {
+                health -= map[mapIndex][i].atk / 2.0;
+                updateSerial()
+                invulPlayer = 1;
+                playerHitDirec = 2;
+            } else if (checkLowerBoundingBox(i, mapIndex, xPos, yPos, ENTITY_SIZE)) {
+                health -= map[mapIndex][i].atk / 2.0;
+                updateSerial()
+                invulPlayer = 1;
+                playerHitDirec = 3;
+            } else if (checkRightBoundingBox(i, mapIndex, xPos, yPos, ENTITY_SIZE)) {
+                health -= map[mapIndex][i].atk / 2.0;
+                updateSerial()
+                invulPlayer = 1;
+                playerHitDirec = 4;
+            }
+        }
+    }
+    // Check enemy collisions with player projectiles
+    for (let i = 0; i < map[mapIndex].length; i++) {
+        for (let j = 0; j < userProj.length; j++) {
+            if (checkUpperBoundingBox(i, mapIndex, userProj[j].projX, userProj[j].projY, userProj[j].size)) {
+                calculateDamage(userProj[j].name, mapIndex, i);
+                map[mapIndex][i].hitDirec = 0;
+                map[mapIndex][i].invul = 1;
+                userProj[j].hit = true;
+            } else if (checkLeftBoundingBox(i, mapIndex, userProj[j].projX, userProj[j].projY, userProj[j].size)) {
+                calculateDamage(userProj[j].name, mapIndex, i);
+                map[mapIndex][i].hitDirec = 1;
+                map[mapIndex][i].invul = 1;
+                userProj[j].hit = true;
+            } else if (checkLowerBoundingBox(i, mapIndex, userProj[j].projX, userProj[j].projY, userProj[j].size)) {
+                calculateDamage(userProj[j].name, mapIndex, i);
+                map[mapIndex][i].hitDirec = 2;
+                map[mapIndex][i].invul = 1;
+                userProj[j].hit = true;
+            } else if (checkRightBoundingBox(i, mapIndex, userProj[j].projX, userProj[j].projY, userProj[j].size)) {
+                calculateDamage(userProj[j].name, mapIndex, i);
+                map[mapIndex][i].hitDirec = 3;
+                map[mapIndex][i].invul = 1;
+                userProj[j].hit = true;
+            }
+        }
+    }
+}
+
+// Check if player crossed the bounding boxes, returns true if yes, no otherwise
+function checkUpperBoundingBox(i, mapIndex, xVal, yVal, size) {
+    return map[mapIndex][i].currY - 5 < yVal && 
+        map[mapIndex][i].currY + 5 > yVal && 
+        map[mapIndex][i].currX - 5 < xVal && 
+        map[mapIndex][i].currX + size + 5 > xVal;
+}
+
+function checkLeftBoundingBox(i, mapIndex, xVal, yVal, size) {
+    return map[mapIndex][i].currX - 5 < xVal && 
+        map[mapIndex][i].currX + 5 > xVal && 
+        map[mapIndex][i].currY - 5 < yVal && 
+        map[mapIndex][i].currY + size + 5 > yVal;
+}
+
+function checkLowerBoundingBox(i, mapIndex, xVal, yVal, size) {
+    return map[mapIndex][i].currY + size - 5 < yVal && 
+        map[mapIndex][i].currY + size + 5 > yVal && 
+        map[mapIndex][i].currX - 5 < xVal && 
+        map[mapIndex][i].currX + size + 5 > xVal;
+}
+
+function checkRightBoundingBox(i, mapIndex, xVal, yVal, size) {
+    return map[mapIndex][i].currX + size - 5 < xVal && 
+        map[mapIndex][i].currX + size + 5 > xVal && 
+        map[mapIndex][i].currY - 5 < yVal && 
+        map[mapIndex][i].currY + size + 5 > yVal;
+}
+
+// Separate function for calculating sword collision
+function registerSwordSwing() {
+    mapIndex = convertXYToMapArrayIndex(mapX, mapY);
+    for (let i = 0; i < map[mapIndex].length; i++) {
+        let x = Math.abs(xPos - map[mapIndex][i].currX - (ENTITY_SIZE / 2));
+        let y = Math.abs(yPos - map[mapIndex][i].currY - (ENTITY_SIZE / 2));
+        if (Math.sqrt(x * x + y * y) < 120) { // Detect sword swing within 120 units
+            if (face == 0) {
+                map[mapIndex][i].health -= 4;
+                map[mapIndex][i].hitDirec = 0;
+                map[mapIndex][i].invul = 1;
+            } else if (face == 1) {
+                map[mapIndex][i].health -= 4;
+                map[mapIndex][i].hitDirec = 1;
+                map[mapIndex][i].invul = 1;
+            } else if (face == 2) {
+                map[mapIndex][i].health -= 4;
+                map[mapIndex][i].hitDirec = 2;
+                map[mapIndex][i].invul = 1;
+            } else if (face == 3) { 
+                map[mapIndex][i].health -= 4;
+                map[mapIndex][i].hitDirec = 3;
+                map[mapIndex][i].invul = 1;
+            }
+        }
+    }
+}
+
+// Calculates how much damage is delt to enemy
+function calculateDamage(name, mapIndex, i) {
+    if (name == "flame") {
+        map[mapIndex][i].health -= 1;
+    } else if (name == "rang") {
+        map[mapIndex][i].health -= 2;
+    } else if (name == "arrow") {
+        map[mapIndex][i].health -= 4;
+    }
+}
+
 // Update player position
 function updatePos() {
-    if (gameState == 1) {
+    if (gameState == 1 && !paused && invulPlayer == 0) {
         if (left) {
             // If player crosses left area boundary
             if (xPos == CHAR_DIAM / 2 && mapX > 0) {
@@ -290,7 +750,7 @@ function updatePos() {
             } 
         } else if (right) {
             // If player crosses right area boundary
-            if (xPos == WIDTH - (CHAR_DIAM / 2) && mapX < map[0].length - 1) {
+            if (xPos == WIDTH - (CHAR_DIAM / 2) && mapX < 2) {
                 mapX++;
                 xPos = CHAR_DIAM / 2;
                 updateSerial();
@@ -310,7 +770,7 @@ function updatePos() {
             }
         } else if (down) {
             // If player crosses lower area boundary
-            if (yPos == HEIGHT - (CHAR_DIAM / 2) && mapY < map.length - 1) {
+            if (yPos == HEIGHT - (CHAR_DIAM / 2) && mapY < 2) {
                 mapY++;
                 yPos = CHAR_DIAM / 2;
                 updateSerial();
@@ -319,87 +779,48 @@ function updatePos() {
                 yPos += MOVE_STEP;
             }
         }
+    } else if (invulPlayer > 0) {
+        invulPlayer += 2;
+        // Bounce back depending on which boundary is hit
+        if (playerHitDirec == 1 && yPos > (CHAR_DIAM / 2) + 20) {
+            yPos -= 5;
+        } else if (playerHitDirec == 2 && xPos > (CHAR_DIAM / 2) + 20) {
+            xPos -= 5;
+        } else if (playerHitDirec == 3 && yPos < HEIGHT - (CHAR_DIAM / 2) - 20) {
+            yPos += 5;
+        } else if (playerHitDirec == 4 && xPos < WIDTH - (CHAR_DIAM / 2) - 20) {
+            xPos += 5;
+        }
+        // Invulnerable for 40 ticks
+        if (invulPlayer >= 40) {
+            invulPlayer = 0;
+        }
     }
 }
 
-// User clicks mouse
-document.body.addEventListener("mousedown", function(e) {
-    weaponActive = true;
-    if (weapon == 2 && spellState) { // Wand
-        userProj.push({
-            name: "flame",
-            projX: xPos,
-            projY: yPos,
-            direc: face,
-            lifeTime: 300,
-            travelCount: 0,
-            valid: true
-        });
-        spellState = false;
-        fireImg.resize(75, 75);
-    } else if (weapon == 3 && healState == 0) { // Heal
-        healState = 1;
-        health += 2;
-        if (health > maxHealth) {
-            health = maxHealth;
-        }
+// Stops player movement
+function stopPlayer() {
+    left = false;
+    right = false;
+    down = false;
+    up = false;
+}
+
+// Draw character
+function displayChar() {
+    if (face == 0) { // Up
+        image(charUp, xPos - 32, yPos - 35);
+    } else if (face == 1) { // Left
+        image(charLeft, xPos - 32, yPos - 35);
+    } else if (face == 2) { // Down
+        image(charDown, xPos - 32, yPos - 35);
+    } else { // Right
+        image(charRight, xPos - 32, yPos - 35);
     }
-});
+}
 
-// User releases mouse click
-document.body.addEventListener("mouseup", function(e) {
-    weaponActive = false;
-    if (weapon == 1 && bowState == 0) { // Bow
-        userProj.push({
-            name: "arrow",
-            projX: xPos,
-            projY: yPos,
-            direc: face,
-            valid: true
-        });
-        bowState = 1;
-    } else if (weapon == 4 && rangState) { // Boomerang
-        userProj.push({
-            name: "rang",
-            projX: xPos,
-            projY: yPos,
-            direc: face,
-            travelCount: 0,
-            back: false,
-            valid: true
-        });
-        rangState = false;
-    }
-});
-
-// Display the gameplay
-function displayGame() {
-    // Display level
-    displayArea(mapX, mapY);
-
-    // Update character position
-    updatePos();
-    // Draw character
-    circle(xPos, yPos, CHAR_DIAM);
-
-    // Display all on-screen projectiles
-    displayProjectiles();
-
-    // Calculate projectile collisions
-    calculateCollisions();
-
-    // Heal effect
-    if (healState > 0) {
-        if (healState < 100) {
-            image(healEffect, xPos - 50, yPos - 50);
-        }
-        healState++;
-        // Cannot use heal again for about 30 seconds
-        if (healState == 3000) {
-            healState = 0;
-        }
-    }
-
+// Drawe active weapon
+function displayWeapon() {
     // Display weapon
     if (weaponActive) {
         if (weapon == 0) { // Sword
@@ -446,6 +867,7 @@ function displayGame() {
     }
 }
 
+// Display all projectiles on screen
 function displayProjectiles() {
     // Only allow fire every 50 ticks
     if (bowState > 0) {
@@ -497,6 +919,7 @@ function displayProjectiles() {
             if (userProj[i].travelCount > 150) {
                 // Resize fire image
                 fireImg.resize(150, 150);
+                userProj[i].size *= 2;
                 userProj[i].lifeTime -= 1;
                 // Active until lifetime runs out
                 if (userProj[i].lifeTime <= 0) {
@@ -560,73 +983,257 @@ function displayProjectiles() {
             }
         }
     }
-    for (let j = 0; j < enemyProj.length; j++) {
-
-    }
 
     // Clean up invalid projectiles
     for (let i = userProj.length - 1; i >= 0; i--) {
-        if (!userProj[i].valid) { // Arrow physics
+        if (!userProj[i].valid || (userProj[i].hit && userProj[i].name == "arrow")) { // Arrows hit once
             userProj.splice(i, 1);
-        }
+        } 
     }
-    for (let j = enemyProj.length - 1; j >= 0; j--) {
-        if (!enemyProj[j].valid) { // Arrow physics
-            enemyProj.splice(i, 1);
-        }
-    }
-}
-
-// Detect collisions between entities and projectiles
-function calculateCollisions() {
-
 }
 
 // Clear projectile arrays
 function resetProjectiles() {
     userProj = [];
-    enemyProj = [];
     spellState = true;
     rangState = true;
     potionState = true;
     bowState = 0;
 }
 
-
-// Display map piece
-function displayArea(mapX, mapY) {
-    // Area (1, 1)
-    if (mapX == 1 && mapY == 1) {
-        rect(400, 500, 55, 55, 20);
-        rect(600, 500, 55, 55, 20);
-        rect(800, 500, 55, 55, 20);
-    } else if (mapX == 1 && mapY == 0) { // Area (1, 0)
-        rect(800, 100, 55, 55, 20);
-        rect(800, 300, 55, 55, 20);
-        rect(800, 500, 55, 55, 20);
+// Display all enemies
+function displayEnemies() {
+    mapIndex = convertXYToMapArrayIndex(mapX, mapY);
+    for(let i = 0; i < map[mapIndex].length; i++) {
+        if (map[mapIndex][i].name == "wander") {
+            if (map[mapIndex][i].invul > 0) { // Invincibility frame flicker
+                if (map[mapIndex][i].invul < 5 || map[mapIndex][i].invul > 15) {
+                    image(wanderImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+                } 
+            } else {
+                image(wanderImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+            }
+        } else if (map[mapIndex][i].name == "chaser") {
+            if (map[mapIndex][i].invul > 0) { // Invincibility frame flicker
+                if (map[mapIndex][i].invul < 5 || map[mapIndex][i].invul > 15) {
+                    image(chaseImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+                } 
+            } else {
+                image(chaseImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+            }
+        } else if (map[mapIndex][i].name == "knight") {
+            if (map[mapIndex][i].invul > 0) { // Invincibility frame flicker
+                if (map[mapIndex][i].invul < 5 || map[mapIndex][i].invul > 15) {
+                    image(knightImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+                } 
+            } else {
+                image(knightImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+            }
+        } else if (map[mapIndex][i].name == "knightChaser") {
+            if (map[mapIndex][i].invul > 0) { // Invincibility frame flicker
+                if (map[mapIndex][i].invul < 5 || map[mapIndex][i].invul > 15) {
+                    image(knightChaserImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+                } 
+            } else {
+                image(knightChaserImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+            }
+        } else if (map[mapIndex][i].name == "skeleton") {
+            if (map[mapIndex][i].invul > 0) { // Invincibility frame flicker
+                if (map[mapIndex][i].invul < 5 || map[mapIndex][i].invul > 15) {
+                    image(skeletonImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+                } 
+            } else {
+                image(skeletonImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+            }
+        } else if (map[mapIndex][i].name == "caster") {
+            if (map[mapIndex][i].invul > 0) { // Invincibility frame flicker
+                if (map[mapIndex][i].invul < 5 || map[mapIndex][i].invul > 15) {
+                    image(casterImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+                } 
+            } else {
+                image(casterImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+            }
+        } else if (map[mapIndex][i].name == "guardian") {
+            if (map[mapIndex][i].invul > 0) { // Invincibility frame flicker
+                if (map[mapIndex][i].invul < 5 || map[mapIndex][i].invul > 15) {
+                    image(guardianImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+                } 
+            } else {
+                image(guardianImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+            }
+        } else if (map[mapIndex][i].name == "boss") {
+            if (map[mapIndex][i].invul > 0) { // Invincibility frame flicker
+                if (map[mapIndex][i].invul < 5 || map[mapIndex][i].invul > 15) {
+                    image(bossImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+                } 
+            } else {
+                image(bossImg, map[mapIndex][i].currX, map[mapIndex][i].currY);
+            }
+        } 
     }
+    enemyMove();
+    // Remove dead enemies except skeletons
+    for(let j = map[mapIndex].length - 1; j >= 0; j--) {
+        if (map[mapIndex][j].health <= 0 && map[mapIndex][j].name != "skeleton") {
+            map[mapIndex].splice(j, 1);
+            killCount++;
+        } 
+    }
+
+    // If all enemies are killed, except skeletons, display boss
+    if (killCount == NUM_ENEMIES - 1) {
+        killCount++;
+        map[1].push({ name: "boss", currX: 400, currY: 400, health: 100, speed: 4, atk: 5,
+            aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+    }
+}
+
+// Enemy AI that does not actively chase the player
+function enemyMove() {
+    mapIndex = convertXYToMapArrayIndex(mapX, mapY);
+    for (let i = 0; i < map[mapIndex].length; i++) {
+        // Update the counter
+        map[mapIndex][i].direcTime++;
+        if (map[mapIndex][i].invul == 0) {
+            // This type of enemy will move randomly
+            if (map[mapIndex][i].aiType == "move") {
+                randomMove(i, mapIndex);
+            } else if (map[mapIndex][i].aiType == "chase") { // This type of enemy will chase the player
+                let x = Math.abs(xPos - map[mapIndex][i].currX);
+                let y = Math.abs(yPos - map[mapIndex][i].currY);
+                if (Math.sqrt(x * x + y * y) > 200) { // If more than 500 units away
+                    randomMove(i, mapIndex);
+                } else { // If within range, chase
+                    if (map[mapIndex][i].currX < xPos - 25) {
+                        map[mapIndex][i].currX += map[mapIndex][i].speed;
+                    } else {
+                        map[mapIndex][i].currX -= map[mapIndex][i].speed;
+                    }
+                    if (map[mapIndex][i].currY < yPos - 25) {
+                        map[mapIndex][i].currY += map[mapIndex][i].speed;
+                    } else {
+                        map[mapIndex][i].currY -= map[mapIndex][i].speed;
+                    }
+                }
+            } 
+        } else if (map[mapIndex][i].invul > 0) { // Bounce back when hit
+            map[mapIndex][i].invul += 2;
+            // Bounce back depending on which boundary is hit
+            if (map[mapIndex][i].name != "guardian") { // Guardians never move
+                if (map[mapIndex][i].hitDirec == 1 && map[mapIndex][i].currY > (CHAR_DIAM / 2) + 20) {
+                    map[mapIndex][i].currY -= 5;
+                } else if (map[mapIndex][i].hitDirec == 2 && map[mapIndex][i].currX > (CHAR_DIAM / 2) + 20) {
+                    map[mapIndex][i].currX -= 5;
+                } else if (map[mapIndex][i].hitDirec == 3 && map[mapIndex][i].currY < HEIGHT - (CHAR_DIAM / 2) - 20) {
+                    map[mapIndex][i].currY += 5;
+                } else if (map[mapIndex][i].hitDirec == 4 && map[mapIndex][i].currX < WIDTH - (CHAR_DIAM / 2) - 20) {
+                    map[mapIndex][i].currX += 5;
+                }
+            }
+            // Invulnerable for 40 ticks
+            if (map[mapIndex][i].invul >= 40) {
+                map[mapIndex][i].invul = 0;
+            }
+        }
+    }
+}
+
+// Helper function for random move
+function randomMove(i, mapIndex) {
+    if (map[mapIndex][i].direcTime > 50) {
+        map[mapIndex][i].direction = Math.floor(Math.random() * 4);
+        map[mapIndex][i].direcTime = 0;
+        map[mapIndex][i].bounced = false;
+    }
+    if (map[mapIndex][i].direction == 0) {
+        if (map[mapIndex][i].currY < ENTITY_SIZE || map[mapIndex][i].bounced) {
+            map[mapIndex][i].currY += map[mapIndex][i].speed;
+            map[mapIndex][i].bounced = true;
+        } else {
+            map[mapIndex][i].currY -= map[mapIndex][i].speed;
+        }
+    } else if (map[mapIndex][i].direction == 1 || map[mapIndex][i].bounced) {
+        if (map[mapIndex][i].currX < ENTITY_SIZE) {
+            map[mapIndex][i].currX += map[mapIndex][i].speed;
+            map[mapIndex][i].bounced = true;
+        } else {
+            map[mapIndex][i].currX -= map[mapIndex][i].speed;
+        }
+    } else if (map[mapIndex][i].direction == 2 || map[mapIndex][i].bounced) {
+        if (map[mapIndex][i].currY > HEIGHT - ENTITY_SIZE) {
+            map[mapIndex][i].currY -= map[mapIndex][i].speed;
+            map[mapIndex][i].bounced = true;
+        } else {
+            map[mapIndex][i].currY += map[mapIndex][i].speed;
+        }
+    } else if (map[mapIndex][i].direction == 3 || map[mapIndex][i].bounced) {
+        if (map[mapIndex][i].currX > WIDTH - ENTITY_SIZE) {
+            map[mapIndex][i].currX -= map[mapIndex][i].speed;
+            map[mapIndex][i].bounced = true;
+        } else {
+            map[mapIndex][i].currX += map[mapIndex][i].speed;
+        }
+    }
+}
+
+// Restart game
+function restart() {
+    paused = false;
+    maxHealth = 4;
+    health = 4;
+    xPos = WIDTH / 2;
+    yPos = HEIGHT / 2;
+    face = 2;
+    weapon = 0;
+    weaponActive = false;
+    killCount = 0;
+    map = [
+        [], [], [],
+        [], [], [],
+        [], [], []
+    ];
+    mapX = 1;
+    mapY = 1;
+    right = false;
+    left = false;
+    up = false;
+    down = false;
+    userProj = [];
+    spellState = true;
+    rangState = true;
+    potionState = true;
+    bowState = 0;
+    healState = 0;
+    invulPlayer = 0;
+    playerHitDirec = 1;
+    directionTime = 0;
 }
 
 // Update to Arduino
 function updateSerial() {
     // Send to serial
+    serial.writeLine((health * 20) + convertXYToMapArrayIndex(mapX, mapY));
+}
+
+// Helper function for less code
+function convertXYToMapArrayIndex(mapX, mapY) {
     if (mapX == 0 && mapY == 0) {
-        serial.writeLine(0);
+        return 0;
     } else if (mapX == 1 && mapY == 0) {
-        serial.writeLine(1);
+        return 1;
     } else if (mapX == 2 && mapY == 0) {
-        serial.writeLine(2);
+        return 2;
     } else if (mapX == 0 && mapY == 1) {
-        serial.writeLine(3);
+        return 3;
     } else if (mapX == 1 && mapY == 1) {
-        serial.writeLine(4);
+        return 4;
     } else if (mapX == 2 && mapY == 1) {
-        serial.writeLine(5);
+        return 5;
     } else if (mapX == 0 && mapY == 2) {
-        serial.writeLine(6);
+        return 6;
     } else if (mapX == 1 && mapY == 2) {
-        serial.writeLine(7);
+        return 7;
     } else if (mapX == 2 && mapY == 2) {
-        serial.writeLine(8);
+        return 8;
     }
 }
