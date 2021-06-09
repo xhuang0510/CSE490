@@ -21,6 +21,9 @@ const int BUTTON_1_PIN = 13;
 const int BUTTON_2_PIN = 12;
 const int BUTTON_3_PIN = 4;
 
+// Vibromotor
+const short VIBRATE_OUTPUT_PIN = 5;
+
 // Text params
 int16_t x, y;
 uint16_t textWidth, textHeight;
@@ -34,6 +37,10 @@ int mapIndex = 4;
 
 // Current health
 int health = 8;
+int prevHealth = health;
+
+bool vibrate = false;
+int vibTimer = 0;
 
 int _lastAnalogVal = -1;
 
@@ -49,9 +56,13 @@ void setup() {
     for (;;); // Don't proceed, loop forever
   }
 
+  // Buttons are input
   pinMode(BUTTON_1_PIN, INPUT_PULLUP);
   pinMode(BUTTON_2_PIN, INPUT_PULLUP);
   pinMode(BUTTON_3_PIN, INPUT_PULLUP);
+
+  // Set the vibromotor pin to output
+  pinMode(VIBRATE_OUTPUT_PIN, OUTPUT);
 }
 
 void loop() {
@@ -65,6 +76,27 @@ void loop() {
     // Convert string data into an integer
     mapIndex = rcvdSerialData.toInt() % 10;
     health = rcvdSerialData.toInt() / 10;
+    // If health decreased, vibrate
+    if (health < prevHealth) {
+      vibrate = true;
+    }
+    prevHealth = health;
+    if (rcvdSerialData.toInt() / 100 == 1) { // Reset inventory
+      inventoryIndex = 0;
+      selectedIndex = 0;
+      health = 8;
+    }
+  }
+
+  // Vibrate for 5 ticks
+  if (vibrate) {
+    digitalWrite(VIBRATE_OUTPUT_PIN, HIGH);
+    vibTimer++;
+    if (vibTimer >= 5) {
+      vibTimer = 0;
+      vibrate = false;
+      digitalWrite(VIBRATE_OUTPUT_PIN, LOW);
+    }
   }
 
   // Receive button inputs

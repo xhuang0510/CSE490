@@ -673,7 +673,6 @@ document.body.addEventListener("mouseup", function(e) {
 
 // Display the gameplay
 function displayGame() {
-    console.log(frozen);
     // Check if still alive
     if (health <= 0) {
         gameState++;
@@ -736,7 +735,6 @@ function displayGame() {
 
 // Handle grand spell casts
 function handleGrandSpell() {
-    console.log("entered handle");
     if (ml5CastSide == "red") { // Mass damage
         for (let i = 0; i < map[mapIndex].length; i++) {
             map[mapIndex][i].health -= 10;
@@ -744,7 +742,6 @@ function handleGrandSpell() {
             map[mapIndex][i].invul = 1;
         }
     } else { // Time freeze
-        console.log("entered handle freeze");
         frozen = true;
     }
 }
@@ -1361,7 +1358,8 @@ function restart() {
 // Update to Arduino
 function updateSerial() {
     // Send to serial
-    serial.writeLine((health * 20) + convertXYToMapArrayIndex(mapX, mapY));
+    serial.writeLine((health * 20) + convertXYToMapArrayIndex(mapX, mapY) 
+    + (100 * (gameState == 0 ? 1 : 0)));
 }
 
 // Helper function for less code
