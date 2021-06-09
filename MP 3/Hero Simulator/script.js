@@ -2,11 +2,40 @@ let shapeFraction = 0; // tracks the new shape fraction off serial
 let serial; // the Serial object
 let serialOptions = { baudRate: 115200  };
 
-// Canvas dimensions
+// ----------------- ML ------------------ //
+let video;
+let poseNet;
+let currentPoses;
+let poseNetModelReady = false;
+
+/**
+ * Callback function called by ml5.js PoseNet when the PoseNet model is ready
+ * Will be called once and only once
+ */
+function onPoseNetModelReady() {
+    poseNetModelReady = true;
+}
+
+/**
+ * Callback function called by ml5.js PosetNet when a pose has been detected
+ */
+function onPoseDetected(poses) {
+    currentPoses = poses;
+    if(currentPoses){
+        let strHuman = " human";
+        if(currentPoses.length > 1){
+        strHuman += 's';
+        }
+        text("We found " + currentPoses.length + strHuman);
+    }
+}
+
+// Game constants
 const WIDTH = 1000;
 const HEIGHT = 700;
 const ENTITY_SIZE = 60;
 const NUM_ENEMIES = 60;
+const GRAND_SPELL_COOLDOWN = 4500;
 
 // Sword images
 let swordRight, swordLeft, swordUp, swordDown;
@@ -39,7 +68,7 @@ let charRight, charLeft, charUp, charDown;
 let wanderImg, chaseImg, knightImg, knightChaserImg, guardianImg, casterImg,
     skeletonImg, bossImg;
 
-// Load game obstacles
+// Load home screen art
 let pedestalImg;
 
 // Preload images
@@ -160,6 +189,29 @@ function setup() {
 
   // If we have previously approved ports, attempt to connect with them
   serial.autoConnectAndOpenPreviouslyApprovedPort(serialOptions);
+
+  // ml5js PoseNet initialization
+  video = createCapture(VIDEO);
+  video.hide(); // hide raw video (feel free to comment in/out to see effect)
+  poseNet = ml5.poseNet(video, onPoseNetModelReady); //call onPoseNetModelReady when ready
+  poseNet.on('pose', onPoseDetected); // call onPoseDetected when pose detected
+}
+
+function onSerialErrorOccurred(eventSender, error) {
+    console.log("onSerialErrorOccurred", error);
+}
+
+function onSerialConnectionOpened(eventSender) {
+    console.log("onSerialConnectionOpened");
+}
+
+function onSerialConnectionClosed(eventSender) {
+    console.log("onSerialConnectionClosed");
+}
+
+function onSerialDataReceived(eventSender, newData) {
+    console.log("onSerialDataReceived", newData);
+    weapon = newData;
 }
 
 // Game constants
@@ -171,6 +223,9 @@ let gameState = 0;
 
 // Track whether game is paused
 let paused = false;
+
+// Track whether user is casting
+let ml5Casting = false;
 
 // Track player health
 let maxHealth = 4;
@@ -223,10 +278,20 @@ let playerHitDirec = 1;
 // Enemies change direction
 let directionTime = 0;
 
+// Track pose direction and if casted properly
+let ml5CastSide = "red";
+let ml5FillColor = "red";
+let confirmTime = 0;
+let casted = false;
+
+// Track grand spell cooldown
+let grandSpellCooldown = 0;
+let freezeTime = 0;
+let frozen = false;
+
 // Sets up the game with area designs and enemy placements
 function setUpGame() {
-    // Secondary array index 0 contains area obstacles
-    // Secondary array index 1 contains area enemies
+    // Fill each area array with enemies
     // Fill area (0, 0)
     map[0].push({ name: "guardian", currX: 200, currY: 100, health: 20, speed: 0, atk: 6,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
@@ -259,24 +324,24 @@ function setUpGame() {
     map[0].push({ name: "knightChaser", currX: 700, currY: 600, health: 20, speed: 2, atk: 3,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     // Fill area (1, 0)
-    map[1].push({ name: "skeleton", currX: 200, currY: 600, health: 0, speed: 3, atk: 3,
+    map[1].push({ name: "skeleton", currX: 200, currY: 600, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[1].push({ name: "skeleton", currX: 600, currY: 600, health: 0, speed: 3, atk: 3,
+    map[1].push({ name: "skeleton", currX: 600, currY: 600, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[1].push({ name: "skeleton", currX: 300, currY: 200, health: 0, speed: 3, atk: 3,
+    map[1].push({ name: "skeleton", currX: 300, currY: 200, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[1].push({ name: "skeleton", currX: 600, currY: 200, health: 0, speed: 3, atk: 3,
+    map[1].push({ name: "skeleton", currX: 600, currY: 200, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     // Fill area (2, 0)
-    map[2].push({ name: "skeleton", currX: 200, currY: 600, health: 0, speed: 3, atk: 3,
+    map[2].push({ name: "skeleton", currX: 200, currY: 600, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[2].push({ name: "skeleton", currX: 600, currY: 600, health: 0, speed: 3, atk: 3,
+    map[2].push({ name: "skeleton", currX: 600, currY: 600, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[2].push({ name: "skeleton", currX: 300, currY: 200, health: 0, speed: 3, atk: 3,
+    map[2].push({ name: "skeleton", currX: 300, currY: 200, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[2].push({ name: "knightChaser", currX: 700, currY: 100, health: 20, speed: 2, atk: 3,
+    map[2].push({ name: "knightChaser", currX: 700, currY: 100, health: 20, speed: 4, atk: 3,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[2].push({ name: "knightChaser", currX: 200, currY: 600, health: 20, speed: 2, atk: 3,
+    map[2].push({ name: "knightChaser", currX: 200, currY: 600, health: 20, speed: 4, atk: 3,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     map[2].push({ name: "wander", currX: 500, currY: 500, health: 5, speed: 2, atk: 1,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
@@ -295,11 +360,11 @@ function setUpGame() {
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     map[3].push({ name: "knight", currX: 200, currY: 600, health: 20, speed: 2, atk: 3,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[3].push({ name: "chaser", currX: 600, currY: 600, health: 5, speed: 2, atk: 1,
+    map[3].push({ name: "chaser", currX: 600, currY: 600, health: 5, speed: 6, atk: 1,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
-    map[3].push({ name: "chaser", currX: 400, currY: 700, health: 5, speed: 2, atk: 1,
+    map[3].push({ name: "chaser", currX: 400, currY: 700, health: 5, speed: 6, atk: 1,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
-    map[3].push({ name: "chaser", currX: 600, currY: 600, health: 5, speed: 2, atk: 1,
+    map[3].push({ name: "chaser", currX: 600, currY: 600, health: 5, speed: 6, atk: 1,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
     // Fill area (1, 1)
     map[4].push({ name: "wander", currX: 500, currY: 500, health: 5, speed: 2, atk: 1,
@@ -321,28 +386,28 @@ function setUpGame() {
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     map[5].push({ name: "guardian", currX: 700, currY: 300, health: 20, speed: 0, atk: 6,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[5].push({ name: "wander", currX: 500, currY: 500, health: 5, speed: 2, atk: 1,
+    map[5].push({ name: "wander", currX: 500, currY: 500, health: 5, speed: 6, atk: 1,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
-    map[5].push({ name: "wander", currX: 400, currY: 400, health: 5, speed: 2, atk: 1,
+    map[5].push({ name: "wander", currX: 400, currY: 400, health: 5, speed: 6, atk: 1,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
-    map[5].push({ name: "wander", currX: 300, currY: 300, health: 5, speed: 2, atk: 1,
+    map[5].push({ name: "wander", currX: 300, currY: 300, health: 5, speed: 6, atk: 1,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
-    map[5].push({ name: "wander", currX: 300, currY: 600, health: 5, speed: 2, atk: 1,
+    map[5].push({ name: "wander", currX: 300, currY: 600, health: 5, speed: 6, atk: 1,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
-    map[5].push({ name: "chaser", currX: 600, currY: 600, health: 5, speed: 2, atk: 1,
+    map[5].push({ name: "chaser", currX: 600, currY: 600, health: 5, speed: 6, atk: 1,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
-    map[5].push({ name: "chaser", currX: 400, currY: 700, health: 5, speed: 2, atk: 1,
+    map[5].push({ name: "chaser", currX: 400, currY: 700, health: 5, speed: 6, atk: 1,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0}); 
     // Fill area (0, 2)
-    map[6].push({ name: "skeleton", currX: 200, currY: 600, health: 0, speed: 3, atk: 3,
+    map[6].push({ name: "skeleton", currX: 200, currY: 600, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[6].push({ name: "skeleton", currX: 600, currY: 600, health: 0, speed: 3, atk: 3,
+    map[6].push({ name: "skeleton", currX: 600, currY: 600, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[6].push({ name: "skeleton", currX: 300, currY: 200, health: 0, speed: 3, atk: 3,
+    map[6].push({ name: "skeleton", currX: 300, currY: 200, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[6].push({ name: "skeleton", currX: 600, currY: 200, health: 0, speed: 3, atk: 3,
+    map[6].push({ name: "skeleton", currX: 600, currY: 200, health: 0, speed: 3, atk: 2,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[6].push({ name: "knightChaser", currX: 200, currY: 600, health: 60, speed: 3, atk: 6,
+    map[6].push({ name: "knightChaser", currX: 200, currY: 600, health: 60, speed: 5, atk: 6,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     // Fill area (1, 2)
     map[7].push({ name: "guardian", currX: 200, currY: 300, health: 20, speed: 0, atk: 6,
@@ -351,11 +416,11 @@ function setUpGame() {
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     map[7].push({ name: "guardian", currX: 700, currY: 300, health: 20, speed: 0, atk: 6,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[7].push({ name: "knightChaser", currX: 200, currY: 600, health: 20, speed: 2, atk: 3,
+    map[7].push({ name: "knightChaser", currX: 200, currY: 600, health: 20, speed: 3, atk: 3,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[7].push({ name: "knight", currX: 450, currY: 600, health: 60, speed: 1, atk: 6,
+    map[7].push({ name: "knight", currX: 450, currY: 600, health: 60, speed: 1, atk: 7,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[7].push({ name: "knightChaser", currX: 700, currY: 600, health: 20, speed: 2, atk: 3,
+    map[7].push({ name: "knightChaser", currX: 700, currY: 600, health: 20, speed: 3, atk: 3,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     // Fill area (2, 2)
     map[8].push({ name: "knight", currX: 200, currY: 100, health: 20, speed: 2, atk: 3,
@@ -366,7 +431,7 @@ function setUpGame() {
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     map[8].push({ name: "knight", currX: 200, currY: 300, health: 20, speed: 2, atk: 3,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
-    map[8].push({ name: "knightChaser", currX: 450, currY: 300, health: 60, speed: 1, atk: 7,
+    map[8].push({ name: "knightChaser", currX: 450, currY: 300, health: 100, speed: 5, atk: 1,
         aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     map[8].push({ name: "knight", currX: 700, currY: 300, health: 20, speed: 2, atk: 3,
         aiType: "move", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
@@ -410,45 +475,78 @@ function draw() {
     }
     textSize(64);
     if (paused) {
-        text("PAUSED", (width / 3) + 20, height / 4);
+        // Casting spell menu
+        if (ml5Casting) {
+            if(!poseNetModelReady) {
+                textSize(32);
+                textAlign(CENTER);
+                fill(255);
+                noStroke();
+                text("Waiting for PoseNet model to load...", width / 2, height / 2);
+            }
+            text("CAST GRAND SPELL", 180, 90);
+            image(video, 175, 112); // draw the video to the screen at 0,0
+            text("L = DMG", 120, 670);
+            text("R = FRZ", 640, 670);
+            if(currentPoses) {
+                for(let human of currentPoses){
+                    fill(ml5FillColor);
+                    noStroke();
+                    circle(human.pose.rightWrist.x + 205, human.pose.rightWrist.y + 20, 20);
+                    // If properly cast
+                    if (human.pose.rightWrist.x + 205 <= 400) {
+                        ml5CastSide = "red";
+                        ml5FillColor = "red";
+                    } else if (human.pose.rightWrist.x + 205 >= 600) {
+                        ml5CastSide = "blue";
+                        ml5FillColor = "blue";
+                    } else {
+                        ml5CastSide = "white";
+                        ml5FillColor = "white";
+                    }
+                    if ((ml5CastSide == "red" || ml5CastSide == "blue")
+                        && human.pose.rightWrist.y + 20 >= 400) {
+                        confirmTime++;
+                        ml5FillColor = "green";
+                        // Have user confirm selection
+                        if (confirmTime >= 200) {
+                            confirmTime = 0;
+                            ml5Casting = false;
+                            grandSpellCooldown = 1;
+                            casted = true;
+                        }
+                    }
+                }
+            }
+        } else {
+            text("PAUSED", (width / 3) + 20, height / 4);
+            if (grandSpellCooldown > 0) {
+                text("On Cooldown: " + (GRAND_SPELL_COOLDOWN - grandSpellCooldown) / 100, 220, 380);
+            } else {
+                text("Click to Cast Grand Spell", 130, 380);
+            }
+            if (casted) {
+                text("Casted: " + (ml5CastSide == "red" ? "Mass Damage" : "Time Freeze"), 200, 600);
+            } else {
+                text("Casted: Nothing", 250, 600);
+            }
+        }
     } else {
         fill(200); 
         // Display the gameplay
         displayGame();
     }
     // Win the game
-    if (killCount == NUM_ENEMIES) {
+    if (killCount == NUM_ENEMIES + 1) {
         gameState++;
     }
   } else { // Game over
-    if (gameState == 2) {
-        restart();
-        setUpGame();
-        gameState++;
-    }
-    if (killCount < NUM_ENEMIES) {
-        text("Game Over", (width / 4) + 90, height - 150);
-    } else {
+    if (killCount == NUM_ENEMIES + 1) {
         text("You Win!!", (width / 4) + 90, height - 150);
+    } else {
+        text("Game Over", (width / 4) + 90, height - 150);
     }
   }
-}
-
-function onSerialErrorOccurred(eventSender, error) {
-  console.log("onSerialErrorOccurred", error);
-}
-
-function onSerialConnectionOpened(eventSender) {
-  console.log("onSerialConnectionOpened");
-}
-
-function onSerialConnectionClosed(eventSender) {
-  console.log("onSerialConnectionClosed");
-}
-
-function onSerialDataReceived(eventSender, newData) {
-  console.log("onSerialDataReceived", newData);
-  weapon = newData;
 }
 
 function mouseClicked() {
@@ -464,10 +562,14 @@ document.addEventListener('keydown', function(e) {
         if (gameState == 0 && serial.isOpen()) {
             gameState++;
         } else if (gameState == 1) { // In game
-            paused = !paused;
-            stopPlayer();
-            weaponActive = false;
+            if (!ml5Casting) {
+                paused = !paused;
+                stopPlayer();
+                weaponActive = false;
+            }
         } else { // On game over screen
+            restart();
+            setUpGame();
             gameState = 0;
             updateSerial();
         }
@@ -531,6 +633,9 @@ document.body.addEventListener("mousedown", function(e) {
             }
             updateSerial();
         }
+    } else if (paused && grandSpellCooldown == 0) { // Casting
+        ml5Casting = ! ml5Casting;
+        confirmTime = 0;
     }
 });
 
@@ -568,6 +673,7 @@ document.body.addEventListener("mouseup", function(e) {
 
 // Display the gameplay
 function displayGame() {
+    console.log(frozen);
     // Check if still alive
     if (health <= 0) {
         gameState++;
@@ -607,6 +713,39 @@ function displayGame() {
                 healState = 0;
             }
         }
+
+        // If player casted grand spell
+        if (casted) {
+            casted = false;
+            handleGrandSpell();
+        }
+
+        // Cooldown for casting grand spells
+        if (grandSpellCooldown > 0) {
+            grandSpellCooldown++;
+            if (grandSpellCooldown == GRAND_SPELL_COOLDOWN) {
+                grandSpellCooldown = 0;
+            } 
+            // Freeze timer
+            if (grandSpellCooldown > 700) {
+                frozen = false;
+            }
+        }
+    }
+}
+
+// Handle grand spell casts
+function handleGrandSpell() {
+    console.log("entered handle");
+    if (ml5CastSide == "red") { // Mass damage
+        for (let i = 0; i < map[mapIndex].length; i++) {
+            map[mapIndex][i].health -= 10;
+            map[mapIndex][i].hitDirec = 3;
+            map[mapIndex][i].invul = 1;
+        }
+    } else { // Time freeze
+        console.log("entered handle freeze");
+        frozen = true;
     }
 }
 
@@ -1071,7 +1210,10 @@ function displayEnemies() {
             }
         } 
     }
-    enemyMove();
+    // Cannot move if grand freeze is cast
+    if (!frozen) {
+        enemyMove();
+    }
     // Remove dead enemies except skeletons
     for(let j = map[mapIndex].length - 1; j >= 0; j--) {
         if (map[mapIndex][j].health <= 0 && map[mapIndex][j].name != "skeleton") {
@@ -1083,8 +1225,8 @@ function displayEnemies() {
     // If all enemies are killed, except skeletons, display boss
     if (killCount == NUM_ENEMIES - 1) {
         killCount++;
-        map[1].push({ name: "boss", currX: 400, currY: 400, health: 100, speed: 4, atk: 5,
-            aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
+        map[1].push({ name: "boss", currX: 400, currY: 400, health: 120, speed: 4, atk: 4,
+                      aiType: "chase", invul: 0, direction: 0, direcTime: 0, bounced: false, hitDirec: 0});
     }
 }
 
@@ -1207,6 +1349,13 @@ function restart() {
     invulPlayer = 0;
     playerHitDirec = 1;
     directionTime = 0;
+    ml5CastSide = "red";
+    ml5FillColor = "red";
+    confirmTime = 0;
+    casted = false;
+    grandSpellCooldown = 0;
+    reezeTime = 0;
+    frozen = false;
 }
 
 // Update to Arduino
