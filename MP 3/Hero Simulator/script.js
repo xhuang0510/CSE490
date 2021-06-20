@@ -634,7 +634,7 @@ document.body.addEventListener("mousedown", function(e) {
             updateSerial();
         }
     } else if (paused && grandSpellCooldown == 0) { // Casting
-        ml5Casting = ! ml5Casting;
+        ml5Casting = !ml5Casting;
         confirmTime = 0;
     }
 });
@@ -754,22 +754,22 @@ function calculateCollisions() {
         for (let i = 0; i < map[mapIndex].length; i++) {
             if (checkUpperBoundingBox(i, mapIndex, xPos, yPos, ENTITY_SIZE)) {
                 health -= map[mapIndex][i].atk / 2.0;
-                updateSerial()
+                updateSerial();
                 invulPlayer = 1;
                 playerHitDirec = 1;
             } else if (checkLeftBoundingBox(i, mapIndex, xPos, yPos, ENTITY_SIZE)) {
                 health -= map[mapIndex][i].atk / 2.0;
-                updateSerial()
+                updateSerial();
                 invulPlayer = 1;
                 playerHitDirec = 2;
             } else if (checkLowerBoundingBox(i, mapIndex, xPos, yPos, ENTITY_SIZE)) {
                 health -= map[mapIndex][i].atk / 2.0;
-                updateSerial()
+                updateSerial();
                 invulPlayer = 1;
                 playerHitDirec = 3;
             } else if (checkRightBoundingBox(i, mapIndex, xPos, yPos, ENTITY_SIZE)) {
                 health -= map[mapIndex][i].atk / 2.0;
-                updateSerial()
+                updateSerial();
                 invulPlayer = 1;
                 playerHitDirec = 4;
             }
